@@ -30,17 +30,16 @@ None
 
 ## Process
 
-1. Does this thing
-2. Does that thing
-3. Does that other thing
+1. Gets the assignment groups from Canvas
+2. Changes the assignment group name if it says 'Lesson xx', 'Lxx', or 'Wxx'
+3. Gets the assignments from Canvas
+4. If there are no assignments associated to the 'Assignments' or 'Imported Assignments' assignment groups, then the groups are deleted
 
 ## Log Categories
 
-List the categories used in logging data in your module.
-
-- Discussions Created
-- 
+- Renamed Assignment Group
+- Deleted Assignment Group
 
 ## Requirements
 
-These are the expectations for the child module. What does it need to do? What is the "customer" wanting from it? 
+Delete the 'Assignments' and 'Imported Assignments' assignment groups if they are empty, and change the group names that say 'Lesson xx', 'Lxx', and 'Wxx' to say 'Week xx'.

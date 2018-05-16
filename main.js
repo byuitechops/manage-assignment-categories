@@ -83,6 +83,7 @@ module.exports = (course, stepCallback) => {
             var assignmentGroup = assignments.find(assignment => assignment.assignment_group_id === assignmentsId);
             var importedAssignmentGroup = false;
 
+            // Change importedAssignmentGroup to true if an assignment belongs in that assignment group
             groups.forEach(group => {
                 assignments.forEach(assignment => {
                     if (assignment.assignment_group_id === group.id) {
