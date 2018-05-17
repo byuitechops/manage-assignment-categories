@@ -1,7 +1,7 @@
 {
-  "name": "child-template",
+  "name": "manage-assignment-categories",
   "version": "1.0.0",
-  "description": "Put your child module's description here",
+  "description": "Under the Assignments tab, assignments are often categorized by Lessons and have extra assignment groups titled 'Imported Assignments' and 'Assignments' that are often empty. This child module is to delete these extra assignment groups if they are empty, and is to rename all of the assignment groups titled 'Lesson xx', 'Lxx', and 'Wxx' to 'Week xx' assignment groups.",
   "main": "main.js",
   "dependencies": {
     "canvas-wrapper": "github:byuitechops/canvas-wrapper"
@@ -17,13 +17,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/byuitechops/child-template.git"
+    "url": "git+https://github.com/byuitechops/manage-assignment-categories.git"
   },
-  "author": "Zachary Williams, Daniel Green",
+  "author": "Seth Childers",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/byuitechops/child-template/issues"
+    "url": "https://github.com/byuitechops/manage-assignment-categories/issues"
   },
-  "homepage": "https://github.com/byuitechops/child-template#readme",
+  "homepage": "https://github.com/byuitechops/manage-assignment-categories#readme",
   "childType": "postImport"
 }

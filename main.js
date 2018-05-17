@@ -14,14 +14,19 @@ module.exports = (course, stepCallback) => {
                 stepCallback(null, course);
                 return;
             }
+            if (groups.length === 0) {
+                course.warning(`There are no assignment groups in this course. Skipping this child module.`);
+                stepCallback(null, course);
+                return;
+            }
             getGroupsCallback(null, groups);
         });
     }
 
     /**
      * Renames the assignment groups in Canvas to be 'Week xx' if they are currently 'Lesson xx, Lxx, Wxx'
-     * @param {callback} - waterfall callback sends the parameters to the next function 
      * @param {object array} - the assignment groups array 
+     * @param {callback} - waterfall callback sends the parameters to the next function 
      * @returns {object array} - the assignment groups array
      */
     function renameGroups(groups, renameCallback) {
@@ -34,8 +39,7 @@ module.exports = (course, stepCallback) => {
                         'name': name,
                     }, (putErr) => {
                         if (putErr) {
-                            course.error(putErr);
-                            stepCallback(null, course);
+                            callback(err); // Do the error handling in the eachSeries callback
                             return;
                         }
                         course.log('Renamed Assignment Group', {
@@ -46,18 +50,24 @@ module.exports = (course, stepCallback) => {
                     });
                 }
                 callback();
+            }, (err) => {
+                if (err) {
+                    course.error(err); // If there is an error renaming, continue the program still to delete the empty assignment groups
+                }
+                renameCallback(null, groups);
             });
+        } else {
+            renameCallback(null, groups);
         }
-        renameCallback(null, groups);
     }
 
     /**
-     * Deletes the 'Assignments' and 'Imported Assignments' groups from Canvas if they are empty
-     * @param {callback} - waterfall callback sends the parameters to the next function
+     * Determines if the 'Assignments' and 'Imported Assignments' groups from Canvas are empty or not
      * @param {object array} - the assignment groups array
-     * @returns {object array} - the assignment groups array
+     * @param {callback} - waterfall callback sends the parameters to the next function
+     * @returns {various variables} - see the callback or deleteAssignmentsGroup function header
      */
-    function deleteGroups(groups, deleteCallback) {
+    function checkGroups(groups, deleteCallback) {
         var assignmentsId = '';
         var importedAssignmentsId = '';
 
@@ -80,56 +90,85 @@ module.exports = (course, stepCallback) => {
             }
 
             // Check if there are any assignments in either of the groups to be deleted
-            var assignmentGroup = assignments.find(assignment => assignment.assignment_group_id === assignmentsId);
-            var importedAssignmentGroup = false;
+            var deleteAssignments = assignments.find(assignment => assignment.assignment_group_id === assignmentsId);
+            var deleteImportedAssignments = false;
 
             // Change importedAssignmentGroup to true if an assignment belongs in that assignment group
             groups.forEach(group => {
                 assignments.forEach(assignment => {
                     if (assignment.assignment_group_id === group.id) {
-                        importedAssignmentGroup = true;
+                        deleteImportedAssignments = true;
                     }
                 });
             });
 
-            // If there are no assignments in the 'Assignments' assignment group, then delete the group
-            if (assignmentGroup === undefined) {
-                canvas.delete(`/api/v1/courses/${course.info.canvasOU}/assignment_groups/${assignmentsId}`, (err) => {
-                    if (err) {
-                        course.error(err);
-                        stepCallback(null, course);
-                        return;
-                    }
+            /* Send all of these variables to the delete functions */
+            deleteCallback(null, deleteAssignments, deleteImportedAssignments, assignmentsId, importedAssignmentsId)
+        });
+    }
+
+    /**
+     * Deletes the 'Assignments' group from Canvas if it is empty
+     * @param {object} - deleteAssignments: defined or undefined, determines whether or not 'Assignments' should be deleted
+     * @param {object} - deleteImportedAssignments: true/false, whether or not 'Imported Assignments' should be deleted
+     * @param {integer} - assignmentsId: the 'Assignments' assignment group ID
+     * @param {integer} - importedAssignmentsId: the 'Imported Assignments' assignment group ID
+     * @param {callback} - waterfall callback sends the parameters to the next function
+     * @returns {various variables} - see the callback or deleteAssignmentsGroup function header
+     */
+    function deleteAssignmentsGroup(deleteAssignments, deleteImportedAssignments, assignmentsId, importedAssignmentsId, deleteCallback) {
+        // If there are no assignments in the 'Assignments' assignment group, then delete the group
+        if (deleteAssignments === undefined) {
+            canvas.delete(`/api/v1/courses/${course.info.canvasOU}/assignment_groups/${assignmentsId}`, (err) => {
+                if (err) {
+                    course.error(err); // If there is an error, still try to delete the other assignment group
+                } else {
                     course.log(`Deleted Assignment Group`, {
-                        'Title': 'Assignments',
+                        'Assignment Group Title': 'Assignments',
                         'ID': assignmentsId,
                     });
-                });
-            }
+                }
+                deleteCallback(null, deleteImportedAssignments, importedAssignmentsId);
+            });
+        } else {
+            deleteCallback(null, deleteImportedAssignments, importedAssignmentsId);
+        }
+    }
 
-            // If there are no assignments in the 'Imported Assignments' assignment group, then delete the group
-            if (importedAssignmentGroup !== true) {
-                canvas.delete(`/api/v1/courses/${course.info.canvasOU}/assignment_groups/${importedAssignmentsId}`, (err) => {
-                    if (err) {
-                        course.error(err);
-                        stepCallback(null, course);
-                        return;
-                    }
-                    course.log(`Deleted Assignment Group`, {
-                        'Title': 'Imported Assignments',
-                        'ID': importedAssignmentsId,
-                    });
+    /**
+     * Deletes the 'Imported Assignments' group from Canvas if it is empty
+     * @param {object} - deleteImportedAssignments: true/false, whether or not 'Imported Assignments' should be deleted
+     * @param {integer} - importedAssignmentsId: the 'Imported Assignments' assignment group ID
+     * @param {callback} - waterfall callback sends the parameters to the next function
+     * @returns {object array} - see the callback
+     */
+    function deleteImportedGroup(deleteImportedAssignments, importedAssignmentsId, deleteCallback) {
+        // If there are no assignments in the 'Imported Assignments' assignment group, then delete the group
+        if (deleteImportedAssignments !== true) {
+            canvas.delete(`/api/v1/courses/${course.info.canvasOU}/assignment_groups/${importedAssignmentsId}`, (err) => {
+                if (err) {
+                    course.error(err);
+                    stepCallback(null, course);
+                    return;
+                }
+                course.log(`Deleted Assignment Group`, {
+                    'Assignment Group Title': 'Imported Assignments',
+                    'ID': importedAssignmentsId,
                 });
-            }
+                deleteCallback(null);
+            });
+        } else {
             deleteCallback(null);
-        });
+        }
     }
 
     // Functions to run in async waterfall
     var myFunctions = [
         getGroups,
         renameGroups,
-        deleteGroups,
+        checkGroups,
+        deleteAssignmentsGroup,
+        deleteImportedGroup,
     ];
 
     // Run each function one at a time, passing their results to the next function

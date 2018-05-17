@@ -8,7 +8,7 @@ This child module is built to be used by the Brigham Young University - Idaho D2
 
 ## Purpose
 
-Under the Assignments tab, assignments are categorized by Lessons and have extra sections titled 'Imported Assignments' and 'Assignments' that are often empty. This child module is to delete the extra sections if they are empty, and is to rename all of the lesson sections to 'Week xx' sections.
+Under the Assignments tab, assignments are often categorized by Lessons and have extra assignment groups titled 'Imported Assignments' and 'Assignments' that are often empty. This child module is to delete these extra assignment groups if they are empty, and is to rename all of the assignment groups titled 'Lesson xx', 'Lxx', and 'Wxx' to 'Week xx' assignment groups.
 
 ## How to Install
 
